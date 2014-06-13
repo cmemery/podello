@@ -44,9 +44,7 @@ class PodioCon(object):
         return self.con.Application.list_in_space(space_id)
 
     def get_items(self, app_id):
-        items = self.con.Application.get_items(app_id)
-        for project in items['items']:
-            print project['title']
+        return self.con.Application.get_items(app_id)
 
         #To create an item
         #item = {
@@ -71,14 +69,14 @@ class PodioCon(object):
 if __name__ == "__main__":
     def output_trello():
         t = TrelloCon()
-        print 'Trello card data: \n'
         for b in t.get_boards():
-            print ' Board: %s \n' % b.name
-            for l in t.get_lists(b):
-                print '   List: %s \n' % l.name
-                for c in t.get_cards(l):
-                    print '     Card: %s \n' % c.name
-        print 'Trello output complete'
+            if b.name == board_name:
+                print '\nBoard: %s - %s' % (b.id, b.name)
+                for l in t.get_lists(b):
+                    print ' List: %s' % l.name
+                    for c in t.get_cards(l):
+                        print '  Card: %s' % c.name
+        print 'End Trello output'
 
     def print_space(space):
         print "%s \n" % space['name']
@@ -87,14 +85,18 @@ if __name__ == "__main__":
 
     def output_podio():
         p = PodioCon()
-        #spaces = p.get_spaces(org_id)
-        #for space in spaces:
-        #    print space
         workspace_id = p.get_space(space_name)
         apps = p.get_apps(workspace_id)
         for app in apps:
             if app['config']['name'] == 'Projects':
-                print "%d: %s" % (app['app_id'], app['config']['name'])
-
-    #output_trello()
+                print "Begin Podio output"
+                print " Projects for %s" % space_name
+                #print "%d: %s" % (app['app_id'], app['config']['name'])
+                destination = app
+                projects = p.get_items(destination['app_id'])
+                for project in projects['items']:
+                    print "  %s" % project['title']
+                print "End Podio output"
+        
+    output_trello()
     output_podio()
