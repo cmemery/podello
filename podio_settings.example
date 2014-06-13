@@ -2,5 +2,6 @@ client_id = ""
 client_secret = ""
 username = ""
 password = ""
-
-
+url_root = ""
+org_id = 00000
+space_name = ""
