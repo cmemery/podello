@@ -43,28 +43,32 @@ class PodioCon(object):
     def get_apps(self, space_id):
         return self.con.Application.list_in_space(space_id)
 
-    def get_items(self, app_id):
-        return self.con.Application.get_items(app_id)
+    def get_items(self, app):
+        return self.con.Application.get_items(app)
 
-        #To create an item
-        #item = {
-        #	"fields":[
-        #		{"external_id":"org-name", "values":[{"value":"The Items API sucks"}]}
-        #	]
-        #}
-        #print c.Application.find()
-        #c.Item.create(app_id, item)
-        #Undefined and created at runtime example
-        #print c.transport.GET.user.status()
-
-        # Other methods are:
-        # c.transport.PUT.#{uri}.#{divided}.{by_slashes}()
-        # c.transport.DELETE.#{uri}.#{divided}.{by_slashes}()
-        # c.transport.POST.#{uri}.#{divided}.{by_slashes}(body=paramDict))
-        # For POST and PUT you can pass "type" as a kwarg and register the type as either
-        # application/x-www-form-urlencoded or application/json to match what API expects.
-
-        #items[0]['fields'][2]['values'][0]['value']['file_id']
+    def create_project(self):
+        """ Create a project with values for 
+        title, description (with html), and stage/state
+        """
+        #TODO: Add args to this function to set values
+        #TODO: update Team members on project
+        #TODO: add tasks to a project
+        #TODO: Add comments/updates to a project
+        item = {'fields': [{
+            'external_id': 'project-title',
+            'values': [{
+                'value': 'New test project created via API'
+                }]},{
+            'external_id': 'project-description',
+            'values': [{
+                'value': """<p>Long description of the project.</p>
+                    <p> This project was created via api, and the 
+                    description supports limited html</p><ul><li>
+                    bullet item 1</li><li>bullet item 2</li></ul>"""
+                }]},{
+            'external_id': 'stage', 
+            'values': [{'value': 3}]}]}
+        self.con.Application.create(app_id, item, silent=quiet)
 
 if __name__ == "__main__":
     def output_trello():
@@ -85,18 +89,13 @@ if __name__ == "__main__":
 
     def output_podio():
         p = PodioCon()
-        workspace_id = p.get_space(space_name)
-        apps = p.get_apps(workspace_id)
-        for app in apps:
-            if app['config']['name'] == 'Projects':
-                print "Begin Podio output"
-                print " Projects for %s" % space_name
-                #print "%d: %s" % (app['app_id'], app['config']['name'])
-                destination = app
-                projects = p.get_items(destination['app_id'])
-                for project in projects['items']:
-                    print "  %s" % project['title']
-                print "End Podio output"
-        
-    output_trello()
-    output_podio()
+        print "Begin Podio output"
+        print " Projects for %s" % space_name
+        projects = p.get_items(app_id)
+        for project in projects['items']:
+            print "  %s" % project['title']
+        return projects['items'][0]
+        print "End Podio output"
+    #Debug actions
+    #output_trello()
+    #output_podio()
