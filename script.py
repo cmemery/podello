@@ -23,11 +23,18 @@ class TrelloCon(object):
     def get_checklists(self, card):
         if card.checklists > 1:
             for checklist in card.checklists:
+                complete_tasks = []
+                incomplete_tasks = []
                 print 'CHECKLIST:%s' % checklist.name
                 for item in checklist.items:
-                    print 'ITEM: %s' % item
+                    if item['checked'] == False:
+                        incomplete_tasks.append(item['name'])
+                    else: 
+                        complete_tasks.append(item['name'])
+                print 'Incomplete tasks: %s' % incomplete_tasks
+                print 'Complete tasks: %s' % complete_tasks
         else:
-            print 'no checklists'
+            print 'No checklists'
 
 class PodioCon(object):
     def __init__(self, cid=client_id, cs=client_secret, uname=username, passwd=password):
@@ -80,6 +87,8 @@ if __name__ == "__main__":
                     print ' List: %s' % l.name
                     for c in t.get_cards(l):
                         print '  Card: %s' % c.name
+                        card_details = t.get_card_details(c)
+                        t.get_checklists(card_details)
         print 'End Trello output'
 
     def print_space(space):
@@ -97,5 +106,5 @@ if __name__ == "__main__":
         return projects['items'][0]
         print "End Podio output"
     #Debug actions
-    #output_trello()
-    #output_podio()
+    output_trello()
+    output_podio()
