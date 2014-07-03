@@ -59,28 +59,40 @@ class PodioCon(object):
     def get_items(self, app):
         return self.con.Application.get_items(app)
 
-    def create_project(self):
+    def create_project(self, title='', state='', description=''):
         """ Create a project with values for 
         title, description (with html), and stage/state
         """
-        #TODO: Add args to this function to set values
-        #TODO: update Team members on project
-        #TODO: add tasks to a project
-        #TODO: Add comments/updates to a project
-        item = {'fields': [{
-            'external_id': 'project-title',
-            'values': [{
-                'value': 'New test project created via API'
-                }]},{
-            'external_id': 'project-description',
-            'values': [{
-                'value': """<p>Long description of the project.</p>
+        #TODO Remove these default values after I finish debugging
+        if description == '':
+            description = """<p>Long description of the project.</p>
                     <p> This project was created via api, and the 
                     description supports limited html</p><ul><li>
                     bullet item 1</li><li>bullet item 2</li></ul>"""
-                }]},{
-            'external_id': 'stage', 
-            'values': [{'value': 3}]}]}
+
+        if state == '':
+            state = 3
+
+        if title == '':
+            title = 'New test project created via API'
+
+        #TODO: update Team members on project
+        #TODO: add tasks to a project
+        #TODO: Add comments/updates to a project
+
+        item = {'fields': [{
+            'external_id': 'project-title',
+                'values': [{
+                    'value': title
+            }]},{
+            'external_id': 'project-description',
+                'values': [{
+                    'value': description
+            }]},{
+            'external_id': 'stage',
+                'values': [{
+                    'value': state
+            }]}]}
         self.con.Application.create(app_id, item, silent=quiet)
 
 if __name__ == "__main__":
