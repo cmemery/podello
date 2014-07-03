@@ -20,7 +20,13 @@ class TrelloCon(object):
         card.fetch()
         return card
 
-    def get_checklists(self, card):
+    def print_comments(self, card):
+        if card.comments > 1:
+            for comment in card.comments:
+                print "Update: %s" % comment['data']['text']
+        else:
+            print "No Updates"
+    def print_checklists(self, card):
         if card.checklists > 1:
             for checklist in card.checklists:
                 complete_tasks = []
@@ -88,7 +94,8 @@ if __name__ == "__main__":
                     for c in t.get_cards(l):
                         print '  Card: %s' % c.name
                         card_details = t.get_card_details(c)
-                        t.get_checklists(card_details)
+                        t.print_checklists(card_details)
+                        t.print_comments(card_details)
         print 'End Trello output'
 
     def print_space(space):
