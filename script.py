@@ -59,22 +59,28 @@ class PodioCon(object):
     def get_items(self, app):
         return self.con.Application.get_items(app)
 
-    def create_project(self, title='', state='', description=''):
+    def create_project(self, title='', trello_list='', description=''):
         """ Create a project with values for 
         title, description (with html), and stage/state
-        """
-        #TODO Remove these default values after I finish debugging
-        if description == '':
-            description = """<p>Long description of the project.</p>
-                    <p> This project was created via api, and the 
-                    description supports limited html</p><ul><li>
-                    bullet item 1</li><li>bullet item 2</li></ul>"""
 
-        if state == '':
-            state = 3
+        """
+        state_map = {
+                'Now': 3,
+                'Next': 2,
+                'Queued': 1,
+                'Done': 4
+                }
+
+        if description == '':
+            description = """No description available"""
+
+        if trello_list == '':
+            state = 1 # 'Placeholder for future project'
+        else:
+            state = state_map[trello_list]
 
         if title == '':
-            title = 'New test project created via API'
+            title = 'auto-created from trello api'
 
         #TODO: update Team members on project
         #TODO: add tasks to a project
@@ -93,37 +99,52 @@ class PodioCon(object):
                 'values': [{
                     'value': state
             }]}]}
-        self.con.Application.create(app_id, item, silent=quiet)
+        self.con.Item.create(int(app_id), item)
 
-if __name__ == "__main__":
-    def output_trello():
-        t = TrelloCon()
-        for b in t.get_boards():
-            if b.name == board_name:
-                print '\nBoard: %s - %s' % (b.id, b.name)
-                for l in t.get_lists(b):
-                    print ' List: %s' % l.name
-                    for c in t.get_cards(l):
-                        print '  Card: %s' % c.name
-                        card_details = t.get_card_details(c)
-                        t.print_checklists(card_details)
-                        t.print_comments(card_details)
+def get_board(trellocon, board):
+    for b in trellocon.get_boards():
+        if b.name == board:
+            return b
+
+def get_list(trellocon, board, listname):
+    for l in trellocon.get_lists(board):
+        if l.name == listname:
+            return l
+
+def import_trello():
+    t = TrelloCon()
+    p = PodioCon()
+    b = get_board(t, board_name)
+    print '\nBoard: %s - %s' % (b.id, b.name)
+    for l in t.get_lists(b):
+        for c in t.get_cards(l):
+            p.create_project(title = c.name,
+                    trello_list = l.name,
+                    description = c.description)
+            #card_details = t.get_card_details(c)
+            #TODO add checklist items as subtasks?
+            #t.print_checklists(card_details)
+            #TODO add comments as updates
+            #t.print_comments(card_details)
         print 'End Trello output'
 
-    def print_space(space):
-        print "%s \n" % space['name']
-        for k,v in space.iteritems():
-            print "%s: %s" % (k, v)
+def print_space(space):
+    print "%s \n" % space['name']
+    for k,v in space.iteritems():
+        print "%s: %s" % (k, v)
 
-    def output_podio():
-        p = PodioCon()
-        print "Begin Podio output"
-        print " Projects for %s" % space_name
-        projects = p.get_items(app_id)
-        for project in projects['items']:
-            print "  %s" % project['title']
-        return projects['items'][0]
-        print "End Podio output"
+def output_podio():
+    p = PodioCon()
+    print "Begin Podio output"
+    print " Projects for %s" % space_name
+    projects = p.get_items(app_id)
+    for project in projects['items']:
+        print "  %s - %s" % (project, "")
+    return projects['items'][0]
+    print "End Podio output"
+
+if __name__ == "__main__":
+    pass
     #Debug actions
-    output_trello()
-    output_podio()
+    #import_trello()
+    #output_podio()
