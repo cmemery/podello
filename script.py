@@ -1,6 +1,7 @@
 from trello import TrelloClient as tc
 from trello_settings import *
 from podio_settings import *
+from podio_settings import users
 from pypodio2 import api
 
 class TrelloCon(object):
@@ -20,10 +21,16 @@ class TrelloCon(object):
         card.fetch()
         return card
 
-    def print_comments(self, card):
+    def get_comments(self, card):
         if card.comments > 1:
+            comments = []
             for comment in card.comments:
-                print "Update: %s" % comment['data']['text']
+                comments.append({
+                    'date':comment['date'],
+                    'text':comment['data']['text'],
+                    'username': comment['memberCreator']['username']
+                    })
+            return comments
         else:
             print "No Updates"
     def print_checklists(self, card):
@@ -59,7 +66,7 @@ class PodioCon(object):
     def get_items(self, app):
         return self.con.Application.get_items(app)
 
-    def create_project(self, title='', trello_list='', description=''):
+    def create_project(self, trello_card, trello_list=''):
         """ Create a project with values for 
         title, description (with html), and stage/state
 
@@ -70,23 +77,27 @@ class PodioCon(object):
                 'Queued': 1,
                 'Done': 4
                 }
-
-        if description == '':
+        c = trello_card
+        if c.description == '':
             description = """No description available"""
+        else:
+            description = c.description
 
         if trello_list == '':
             state = 1 # 'Placeholder for future project'
         else:
             state = state_map[trello_list]
-
-        if title == '':
+        if c.name == '':
             title = 'auto-created from trello api'
-
+        else:
+            title = c.name
+        external_id = c.id
         #TODO: update Team members on project
         #TODO: add tasks to a project
         #TODO: Add comments/updates to a project
-
-        item = {'fields': [{
+        item = {
+                'external_id' : external_id,
+            'fields': [{
             'external_id': 'project-title',
                 'values': [{
                     'value': title
@@ -99,8 +110,8 @@ class PodioCon(object):
                 'values': [{
                     'value': state
             }]}]}
-        self.con.Item.create(int(app_id), item)
-
+        #self.con.Item.create(int(app_id), item)
+        #print title
 def get_board(trellocon, board):
     for b in trellocon.get_boards():
         if b.name == board:
@@ -118,14 +129,14 @@ def import_trello():
     print '\nBoard: %s - %s' % (b.id, b.name)
     for l in t.get_lists(b):
         for c in t.get_cards(l):
-            p.create_project(title = c.name,
-                    trello_list = l.name,
-                    description = c.description)
-            #card_details = t.get_card_details(c)
+            p.create_project(c,
+                    trello_list = l.name)
+            print c.name
+            card_details = t.get_card_details(c)
             #TODO add checklist items as subtasks?
             #t.print_checklists(card_details)
             #TODO add comments as updates
-            #t.print_comments(card_details)
+            t.print_comments(card_details)
         print 'End Trello output'
 
 def print_space(space):
