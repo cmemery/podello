@@ -3,6 +3,7 @@ from trello_settings import *
 from podio_settings import *
 from podio_settings import users
 from pypodio2 import api
+import json
 
 class TrelloCon(object):
     def __init__(self, k = KEY, t = TOKEN):
@@ -84,7 +85,6 @@ class PodioCon(object):
             description = """No description available"""
         else:
             description = c.description
-    
         if trello_list == '':
             state = 1 # 'Placeholder for future project'
         else:
@@ -94,45 +94,60 @@ class PodioCon(object):
         else:
             title = c.name
         external_id = c.id
-        item = {
-                'external_id' : external_id,
-            'fields': [{
-            'external_id': 'project-title',
-                'values': [{
-                    'value': title
-            }]},{
-            'external_id': 'project-description',
-                'values': [{
-                    'value': description
-            }]},{
-            'external_id': 'link',
-                'values': [{
-                    'url': c.url
-            }]},{
-
-            'external_id': 'stage',
-                'values': [{
-                    'value': state
-            }]}]}
-        self.con.Item.create(int(app_id), item)
-        pitem = self.con.transport.GET('/item/app/%s/external_id/%s' % (app_id, external_id))
-        #print 'item %s: %s' % (pitem['item_id'], pitem['title'])
+        team = []
+        team_values=[]
+        comments = []
         for comment in reversed(tcon.get_comments(c)):
             d = comment['date'].split('-')
             date = "%s/%s/%s" % (d[1],d[2][:2], d[0])
             if users.has_key(comment['username']):
                 username  = "@[%s](user:%s)" % (comment['username'], users[comment['username']])
-            else: username = comment['username']
-
+                if comment['username'] not in team:
+                    team.append(comment['username'])
+                    team_values.append({
+                        'value': {
+                        'id':users[comment['username']],
+                        'type': 'user',
+                        'user_id': users[comment['username']]}})
+                else:
+                    pass
+            else:
+                username = comment['username']
+            text = comment['text']
+            for user in users:
+                richuser = "[%s](user:%s)" % (user, users[user])
+                text = text.replace(user, richuser)
             commentdetails = "[trello imported comment]\n %s by %s:\n %s" % (
-                    date, username,comment['text'])
-            import json
-            #print commentdetails
-            cd = json.dumps(commentdetails)
-            #print cd
-            self.create_comment(pitem['item_id'], cd)
-            #print 'comment success!'
-
+                    date, username, text)
+            comments.append(json.dumps(commentdetails))
+        item = {
+            'external_id' : external_id,
+        'fields': [{
+        'external_id': 'project-title',
+            'values': [{
+                'value': title
+        }]},{
+        'external_id': 'project-description',
+            'values': [{
+                'value': description
+        }]},{
+        'external_id': 'project-team2',
+            'values': team_values
+            },{
+        'external_id': 'link',
+            'values': [{
+                'url': c.url
+        }]},{
+        'external_id': 'stage',
+            'values': [{
+                'value': state
+        }]}]}
+        print item
+        self.con.Item.create(int(app_id), item)
+        pitem = self.con.transport.GET('/item/app/%s/external_id/%s' % (app_id, external_id))
+        #print 'item %s: %s' % (pitem['item_id'], pitem['title'])
+        for item in comments:
+            self.create_comment(pitem['item_id'], item)
     def create_comment(self,itemid,comment_text):
         payload = '{"value":%s}' % comment_text
         self.con.transport.POST(url='/comment/item/%s' % 
