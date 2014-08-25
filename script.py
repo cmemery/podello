@@ -25,6 +25,7 @@ class TrelloCon(object):
         if card.comments > 1:
             comments = []
             for comment in card.comments:
+
                 comments.append({
                     'date':comment['date'],
                     'text':comment['data']['text'],
@@ -32,7 +33,8 @@ class TrelloCon(object):
                     })
             return comments
         else:
-            print "No Updates"
+            pass
+            #print "No Updates"
     def print_checklists(self, card):
         if card.checklists > 1:
             for checklist in card.checklists:
@@ -66,7 +68,7 @@ class PodioCon(object):
     def get_items(self, app):
         return self.con.Application.get_items(app)
 
-    def create_project(self, trello_card, trello_list=''):
+    def create_project(self, trello_card, trello_list='', tcon = ''):
         """ Create a project with values for 
         title, description (with html), and stage/state
 
@@ -82,7 +84,7 @@ class PodioCon(object):
             description = """No description available"""
         else:
             description = c.description
-
+    
         if trello_list == '':
             state = 1 # 'Placeholder for future project'
         else:
@@ -92,9 +94,6 @@ class PodioCon(object):
         else:
             title = c.name
         external_id = c.id
-        #TODO: update Team members on project
-        #TODO: add tasks to a project
-        #TODO: Add comments/updates to a project
         item = {
                 'external_id' : external_id,
             'fields': [{
@@ -106,12 +105,38 @@ class PodioCon(object):
                 'values': [{
                     'value': description
             }]},{
+            'external_id': 'link',
+                'values': [{
+                    'url': c.url
+            }]},{
+
             'external_id': 'stage',
                 'values': [{
                     'value': state
             }]}]}
-        #self.con.Item.create(int(app_id), item)
-        #print title
+        self.con.Item.create(int(app_id), item)
+        pitem = self.con.transport.GET('/item/app/%s/external_id/%s' % (app_id, external_id))
+        #print 'item %s: %s' % (pitem['item_id'], pitem['title'])
+        for comment in reversed(tcon.get_comments(c)):
+            d = comment['date'].split('-')
+            date = "%s/%s/%s" % (d[1],d[2][:2], d[0])
+            if users.has_key(comment['username']):
+                username  = "@[%s](user:%s)" % (comment['username'], users[comment['username']])
+            else: username = comment['username']
+
+            commentdetails = "[trello imported comment]\n %s by %s:\n %s" % (
+                    date, username,comment['text'])
+            import json
+            #print commentdetails
+            cd = json.dumps(commentdetails)
+            #print cd
+            self.create_comment(pitem['item_id'], cd)
+            #print 'comment success!'
+
+    def create_comment(self,itemid,comment_text):
+        payload = '{"value":%s}' % comment_text
+        self.con.transport.POST(url='/comment/item/%s' % 
+                itemid, body=payload, type='application/json')
 def get_board(trellocon, board):
     for b in trellocon.get_boards():
         if b.name == board:
@@ -126,18 +151,16 @@ def import_trello():
     t = TrelloCon()
     p = PodioCon()
     b = get_board(t, board_name)
-    print '\nBoard: %s - %s' % (b.id, b.name)
+    #print '\nBoard: %s - %s' % (b.id, b.name)
     for l in t.get_lists(b):
         for c in t.get_cards(l):
-            p.create_project(c,
-                    trello_list = l.name)
-            print c.name
             card_details = t.get_card_details(c)
+            p.create_project(c,
+                    tcon = t,
+                    trello_list = l.name)
+            #print c.name
             #TODO add checklist items as subtasks?
             #t.print_checklists(card_details)
-            #TODO add comments as updates
-            t.print_comments(card_details)
-        print 'End Trello output'
 
 def print_space(space):
     print "%s \n" % space['name']
