@@ -5,3 +5,11 @@ password = ""
 url_root = ""
 org_id = 00000
 space_name = ""
+app_id = 0000000
+
+# users map: trello username is key, 
+# podio user id is value
+users = {
+'trellouser1': 100000,
+'trellouser2': 100001,
+}
